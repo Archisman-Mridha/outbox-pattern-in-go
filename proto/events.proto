@@ -1,0 +1,8 @@
+syntax= "proto3";
+
+package main;
+option go_package= "protoc_generated/";
+
+message UserRegistrationStartedEvent {
+  string email= 1;
+}
