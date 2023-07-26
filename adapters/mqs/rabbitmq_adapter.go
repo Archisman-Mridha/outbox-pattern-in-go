@@ -5,8 +5,8 @@ import (
 
 	"github.com/streadway/amqp"
 
-	"github.com/Archisman-Mridha/message-dispatcher/domain/ports"
-	"github.com/Archisman-Mridha/message-dispatcher/utils"
+	"github.com/Archisman-Mridha/outboxer/domain/ports"
+	"github.com/Archisman-Mridha/outboxer/utils"
 )
 
 type RabbitMQAdapter struct {
@@ -17,7 +17,7 @@ type RabbitMQAdapter struct {
 
 func NewRabbitMQAdapter(uri, queueName string) *RabbitMQAdapter {
 	r := &RabbitMQAdapter{ queueName: queueName }
-	r.connection, r.channel= utils.ConnectToRabbitMQ(uri, queueName)
+	r.connection, r.channel= utils.ConnectRabbitMQ(uri, queueName)
 
 	return r
 }
@@ -33,7 +33,10 @@ func(r *RabbitMQAdapter) PublishMessages(args *ports.PublishMessagesArgs) {
 		err := r.channel.Publish("", r.queueName, true, false, amqp.Publishing{ Body: item.Message })
 		if err != nil {
 			log.Printf("❌ Error trying to publish message to rabbitMQ: %v", err)
-			args.ItemsFailedTobePublishedChan <- item.RowId
+		}
+		args.PublishResultsChan <- &ports.PublishResult{
+			RowId: item.RowId,
+			IsPublished: err == nil,
 		}
 	}
 }

@@ -16,6 +16,16 @@ services:
       - ./adapters/dbs/sql/schema.sql:/docker-entrypoint-initdb.d/init.sql
     hostname: postgres
 
+  redis:
+    container_name: redis
+    image: redis:7-alpine
+    hostname: redis
+    command: redis-server --requirepass password
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=password
+
   rabbitmq:
     container_name: rabbitmq
     hostname: rabbitmq
@@ -27,20 +37,18 @@ services:
       - RABBITMQ_DEFAULT_USER=default
       - RABBITMQ_DEFAULT_PASS=password
 
-  message-dispatcher:
-    container_name: outbox-dispatcher
+  outboxer:
+    container_name: outboxer
     build:
       context: .
-    environment:
-      - DB_TYPE=postgres
-      - DB_URI=postgresql://default:password@postgres:5432/authentication?sslmode=disable
-      - BATCH_SIZE=5
-      - MQ_URI=amqp://default:password@rabbitmq:5672
-      - MQ_QUEUE_NAME=events-for-authentication-microservice
+    volumes:
+      - ./test.config.yaml:/config.yaml:ro
     depends_on:
       - postgres
+      - redis
       - rabbitmq
     links:
       - postgres
+      - redis
       - rabbitmq
     restart: on-failure

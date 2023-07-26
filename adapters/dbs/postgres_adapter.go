@@ -6,9 +6,9 @@ import (
 	"log"
 	"strconv"
 
-	sqlc_generated "github.com/Archisman-Mridha/message-dispatcher/adapters/dbs/sql/generated"
-	"github.com/Archisman-Mridha/message-dispatcher/domain/ports"
-	"github.com/Archisman-Mridha/message-dispatcher/utils"
+	sqlc_generated "github.com/Archisman-Mridha/outboxer/adapters/dbs/sql/generated"
+	"github.com/Archisman-Mridha/outboxer/domain/ports"
+	"github.com/Archisman-Mridha/outboxer/utils"
 )
 
 type PostgresAdapter struct {
@@ -19,7 +19,7 @@ type PostgresAdapter struct {
 func NewPostgresAdapter(uri string) *PostgresAdapter {
 	p := &PostgresAdapter{ }
 
-	p.connection= utils.ConnectToPostgres(uri)
+	p.connection= utils.ConnectPostgres(uri)
 	p.queries= sqlc_generated.New(p.connection)
 
 	return p
@@ -29,6 +29,7 @@ func(p *PostgresAdapter) Disconnect( ) {
 	if err := p.connection.Close( ); err != nil {
 		log.Printf("❌ Error closing connection to the database: %v", err)
 	}
+	log.Println("Closed connection to Postgres")
 }
 
 func(p *PostgresAdapter) GetMessages(args *ports.GetMessagesArgs) {
@@ -48,11 +49,13 @@ func(p *PostgresAdapter) GetMessages(args *ports.GetMessagesArgs) {
 	}
 }
 
-func(p *PostgresAdapter) UnlockMessagesFailedTobePublished(args *ports.UnlockMessagesFailedTobePublishedArgs) {
-	for idAsString := range args.ItemsFailedTobePublishedChan {
-		id, _ := strconv.Atoi(idAsString)
-		if err := p.queries.UnlockMessagesFailedTobePublished(context.Background( ), int32(id)); err != nil {
-			log.Printf("❌ Error executing SQL query: %v", err)
+func(p *PostgresAdapter) UnlockMessagesAndUpdatePublishStatus(args *ports.UnlockMessagesAndUpdatePublishStatusArgs) {
+	for item := range args.PublishResultsChan {
+		if !item.IsPublished {
+			id, _ := strconv.Atoi(item.RowId)
+			if err := p.queries.UnlockMessagesFailedTobePublished(context.Background( ), int32(id)); err != nil {
+				log.Printf("❌ Error executing SQL query: %v", err)
+			}
 		}
 	}
 }

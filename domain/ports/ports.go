@@ -14,9 +14,9 @@ type (
 		// args.toBePublishedItemsChan.
 		GetMessages(args *GetMessagesArgs)
 
-		// UnlockMessagesFailedTobePublished takes ItemsFailedTobePublishedChan as an input. It sets the 'lock'
-		// column to FALSE for those rows, whose IDs are present in that channel.
-		UnlockMessagesFailedTobePublished(args *UnlockMessagesFailedTobePublishedArgs)
+		// UnlockMessagesAndUpdatePublishStatus takes PublishResultsChan as an input. Transaction lock
+		// is removed and the publish status is updated for each message.
+		UnlockMessagesAndUpdatePublishStatus(args *UnlockMessagesAndUpdatePublishStatusArgs)
 	
 		// Clean cleans the database by deleting all the rows whichy correspond to those messages, which
 		// have been published to the message queue.
@@ -40,18 +40,24 @@ type (
 		RowId string
 		Message []byte
 	}
+	// PublishResult is a data structure which represents whether the message with self.RowId was
+	// successfully published or not.
+	PublishResult struct  {
+		RowId string
+		IsPublished bool
+	}
 
 	GetMessagesArgs struct {
 		BatchSize int
 		ToBePublishedItemsChan chan *ToBePublishedItem
 	}
 
-	UnlockMessagesFailedTobePublishedArgs struct {
-		ItemsFailedTobePublishedChan chan string
+	UnlockMessagesAndUpdatePublishStatusArgs struct {
+		PublishResultsChan chan *PublishResult
 	}
 
 	PublishMessagesArgs struct {
 		ToBePublishedItemsChan chan *ToBePublishedItem
-		ItemsFailedTobePublishedChan chan string
+		PublishResultsChan chan *PublishResult
 	}
 )

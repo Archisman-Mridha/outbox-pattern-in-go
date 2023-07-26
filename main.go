@@ -1,55 +1,91 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"io/ioutil"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/caarlos0/env/v9"
+	"github.com/go-redis/redis"
 	_ "github.com/lib/pq"
+	"golang.org/x/sync/errgroup"
+	"gopkg.in/yaml.v3"
 
-	"github.com/Archisman-Mridha/message-dispatcher/adapters/dbs"
-	"github.com/Archisman-Mridha/message-dispatcher/adapters/mqs"
-	"github.com/Archisman-Mridha/message-dispatcher/domain/ports"
-	"github.com/Archisman-Mridha/message-dispatcher/domain/usecases"
+	"github.com/Archisman-Mridha/outboxer/adapters/dbs"
+	"github.com/Archisman-Mridha/outboxer/adapters/mqs"
+	"github.com/Archisman-Mridha/outboxer/domain/ports"
+	"github.com/Archisman-Mridha/outboxer/domain/usecases"
 )
 
-type Envs struct {
-	DB_TYPE string `env:"DB_TYPE,notEmpty"`
-	DB_URI string `env:"DB_URI,notEmpty"`
-	BATCH_SIZE int `env:"BATCH_SIZE,notEmpty"`
-
-	MQ_URI string `env:"MQ_URI,notEmpty"`
-	MQ_QUEUE_NAME string `env:"MQ_QUEUE_NAME,notEmpty"`
-}
-var envs Envs
-
 func main( ) {
-	if err := env.Parse(&envs); err != nil {
-		log.Fatalf("❌ Error retrieving envs: %v", err)
+	configFileData, err := ioutil.ReadFile("./config.yaml")
+	if err != nil {
+		log.Panicf("Error reading file config.yaml: %v", err)
+	}
+	var config Config
+	if err= yaml.Unmarshal(configFileData, &config); err != nil {
+		log.Panicf("Error unmarshalling config: %v", err)
 	}
 
-	var outboxDB ports.OutboxDB
-	switch envs.DB_TYPE {
-		case "postgres":
-			outboxDB= dbs.NewPostgresAdapter(envs.DB_URI)
+	waitGroup, waitGroupContext := errgroup.WithContext(context.Background( ))
+	// Listen for system interruption signals to gracefully shut down
+	waitGroup.Go(func( ) error {
+		shutdownSignalChan := make(chan os.Signal, 1)
+		signal.Notify(shutdownSignalChan, os.Interrupt, syscall.SIGTERM)
+		defer signal.Stop(shutdownSignalChan)
 
-		case "redis":
-			log.Fatal("❌ Unimplemented")
+		var err error
 
-		default:
-			log.Fatalf("❌ DB type %s not supported", envs.DB_TYPE)
-	}
-	defer outboxDB.Disconnect( )
+		select {
+			case <- waitGroupContext.Done( ):
+				err= waitGroupContext.Err( )
 
-	var mq ports.MQ= mqs.NewRabbitMQAdapter(envs.MQ_URI, envs.MQ_QUEUE_NAME)
+			case shutdownSignal := <- shutdownSignalChan:
+				log.Printf("Received program shutdown signal %v", shutdownSignal)
+				err= errors.New("❌ Received program interruption signal")
+		}
+
+		return err
+	})
+
+	var mq ports.MQ= mqs.NewRabbitMQAdapter(config.Sink.Uri, config.Sink.Queue)
 	defer mq.Disconnect( )
 
 	usecasesLayer := &usecases.Usecases{ }
-	usecasesLayer.Run(
-		usecases.RunArgs{
-			OutboxDB: outboxDB,
-			MQ: mq,
 
-			BatchSize: envs.BATCH_SIZE,
-		},
-	)
+	if config.Sources.Postgres != nil {
+		var outboxDB ports.OutboxDB= dbs.NewPostgresAdapter(config.Sources.Postgres.Uri)
+		defer outboxDB.Disconnect( )
+
+		usecasesLayer.Run(usecases.RunArgs{
+			WaitGroup: waitGroup,
+
+			OutboxDB: outboxDB,
+			BatchSize: config.Sources.Postgres.BatchSize,
+
+			MQ: mq,
+		})
+	}
+
+	if config.Sources.Redis != nil {
+		var outboxDB ports.OutboxDB= dbs.NewRedisAdapter(&redis.Options{
+			Addr: config.Sources.Redis.Uri,
+			Password: config.Sources.Redis.Password,
+		})
+		defer outboxDB.Disconnect( )
+
+		usecasesLayer.Run(usecases.RunArgs{
+			WaitGroup: waitGroup,
+
+			OutboxDB: outboxDB,
+			BatchSize: config.Sources.Redis.BatchSize,
+
+			MQ: mq,
+		})
+	}
+
+	waitGroup.Wait( )
 }

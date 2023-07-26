@@ -3,6 +3,7 @@ syntax= "proto3";
 package main;
 option go_package= "protoc_generated/";
 
-message UserRegistrationStartedEvent {
+message RegistrationStartedEvent {
   string email= 1;
+  string username= 2;
 }

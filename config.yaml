@@ -1,0 +1,9 @@
+sources:
+  redis:
+    uri: localhost:6379
+    password: password
+    batch_size: 5
+
+sink:
+  uri: amqp://default:password@localhost:5672
+  queue: for-authentication-microservice

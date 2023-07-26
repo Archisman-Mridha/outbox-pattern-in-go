@@ -20,16 +20,17 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type UserRegistrationStartedEvent struct {
+type RegistrationStartedEvent struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Email string `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Email    string `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Username string `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
 }
 
-func (x *UserRegistrationStartedEvent) Reset() {
-	*x = UserRegistrationStartedEvent{}
+func (x *RegistrationStartedEvent) Reset() {
+	*x = RegistrationStartedEvent{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_events_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +38,13 @@ func (x *UserRegistrationStartedEvent) Reset() {
 	}
 }
 
-func (x *UserRegistrationStartedEvent) String() string {
+func (x *RegistrationStartedEvent) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*UserRegistrationStartedEvent) ProtoMessage() {}
+func (*RegistrationStartedEvent) ProtoMessage() {}
 
-func (x *UserRegistrationStartedEvent) ProtoReflect() protoreflect.Message {
+func (x *RegistrationStartedEvent) ProtoReflect() protoreflect.Message {
 	mi := &file_events_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,14 +56,21 @@ func (x *UserRegistrationStartedEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UserRegistrationStartedEvent.ProtoReflect.Descriptor instead.
-func (*UserRegistrationStartedEvent) Descriptor() ([]byte, []int) {
+// Deprecated: Use RegistrationStartedEvent.ProtoReflect.Descriptor instead.
+func (*RegistrationStartedEvent) Descriptor() ([]byte, []int) {
 	return file_events_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *UserRegistrationStartedEvent) GetEmail() string {
+func (x *RegistrationStartedEvent) GetEmail() string {
 	if x != nil {
 		return x.Email
+	}
+	return ""
+}
+
+func (x *RegistrationStartedEvent) GetUsername() string {
+	if x != nil {
+		return x.Username
 	}
 	return ""
 }
@@ -71,12 +79,13 @@ var File_events_proto protoreflect.FileDescriptor
 
 var file_events_proto_rawDesc = []byte{
 	0x0a, 0x0c, 0x65, 0x76, 0x65, 0x6e, 0x74, 0x73, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x04,
-	0x6d, 0x61, 0x69, 0x6e, 0x22, 0x34, 0x0a, 0x1c, 0x55, 0x73, 0x65, 0x72, 0x52, 0x65, 0x67, 0x69,
-	0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x65, 0x64, 0x45,
-	0x76, 0x65, 0x6e, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x6d, 0x61, 0x69, 0x6c, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x6d, 0x61, 0x69, 0x6c, 0x42, 0x13, 0x5a, 0x11, 0x70, 0x72,
-	0x6f, 0x74, 0x6f, 0x63, 0x5f, 0x67, 0x65, 0x6e, 0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x2f, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6d, 0x61, 0x69, 0x6e, 0x22, 0x4c, 0x0a, 0x18, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61,
+	0x74, 0x69, 0x6f, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x74, 0x65, 0x64, 0x45, 0x76, 0x65, 0x6e, 0x74,
+	0x12, 0x14, 0x0a, 0x05, 0x65, 0x6d, 0x61, 0x69, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x05, 0x65, 0x6d, 0x61, 0x69, 0x6c, 0x12, 0x1a, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61,
+	0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61,
+	0x6d, 0x65, 0x42, 0x13, 0x5a, 0x11, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x5f, 0x67, 0x65, 0x6e,
+	0x65, 0x72, 0x61, 0x74, 0x65, 0x64, 0x2f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -93,7 +102,7 @@ func file_events_proto_rawDescGZIP() []byte {
 
 var file_events_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_events_proto_goTypes = []interface{}{
-	(*UserRegistrationStartedEvent)(nil), // 0: main.UserRegistrationStartedEvent
+	(*RegistrationStartedEvent)(nil), // 0: main.RegistrationStartedEvent
 }
 var file_events_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -110,7 +119,7 @@ func file_events_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_events_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UserRegistrationStartedEvent); i {
+			switch v := v.(*RegistrationStartedEvent); i {
 			case 0:
 				return &v.state
 			case 1:

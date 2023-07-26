@@ -1,0 +1,12 @@
+sources:
+  postgres:
+    uri: postgresql://default:password@postgres:5432/authentication?sslmode=disable
+    batch_size: 5
+  redis:
+    uri: redis:6379
+    password: password
+    batch_size: 5
+
+sink:
+  uri: amqp://default:password@rabbitmq:5672
+  queue: for-authentication-microservice
